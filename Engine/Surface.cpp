@@ -15,7 +15,7 @@ surface::surface(const std::string & filename)
 	file.read(reinterpret_cast<char*>(&bm_info_header), sizeof(bm_info_header));
 
 	// Assure we are only working with simple 8bpp RGB bitmap files
-	assert(bm_info_header.biBitCount == 24);
+	assert(bm_info_header.biBitCount == 24 || bm_info_header.biBitCount == 32);
 	assert(bm_info_header.biCompression == BI_RGB);
 
 	width_ = bm_info_header.biWidth;
@@ -26,44 +26,96 @@ surface::surface(const std::string & filename)
 	// Seek to raw data
 	file.seekg(bm_file_header.bfOffBits);
 
-	// Each row is padded to a multiple of 4 bytes
-	const int padding = (4 - (width_ * 3) % 4) % 4;
-
-	// Check the sign bit of height to detect if we are loading a top-down or bottom-up DIB
-	if(height_ > 0)
+	if (bm_info_header.biBitCount == 24)
 	{
-		// bottom-up
-		for (int y = height_ - 1; y > 0; y--)
+		// Each row is padded to a multiple of 4 bytes
+		// In a 24bpp bitmap, each pixel is represented by a 3-byte triplet
+		// containing the values for Blue, Green, and Red respectively
+		const int padding = (4 - (width_ * 3) % 4) % 4;
+
+		// Check if height is negative/positive to detect if we are loading a top-down or bottom-up DIB
+		if (height_ > 0)
 		{
-			for (int x = 0; x < width_; x++)
+			// bottom-up
+			for (int y = height_ - 1; y > 0; y--)
 			{
-				// Precalculate RGB since bitmap color order is BGR
-				const unsigned char b = file.get();
-				const unsigned char g = file.get();
-				const unsigned char r = file.get();
-				// Create a new color object out of the next 3 bytes
-				put_pixel(x, y, { Color(r,g,b) });
+				for (int x = 0; x < width_; x++)
+				{
+					// Precalculate RGB since bitmap color order is BGR
+					const unsigned char b = file.get();
+					const unsigned char g = file.get();
+					const unsigned char r = file.get();
+					// Create a new color object out of the next 3 bytes
+					put_pixel(x, y, { Color(r,g,b) });
+				}
+				// Move forward padding bytes relative to current position
+				file.seekg(padding, std::ios::cur);
 			}
-			// Move forward padding bytes relative to current position
-			file.seekg(padding, std::ios::cur);
+		}
+		else
+		{
+			// top-down
+			for (int y = 0; y < height_; y++)
+			{
+				for (int x = 0; x < width_; x++)
+				{
+					// Precalculate RGB since bitmap color order is BGR
+					const unsigned char b = file.get();
+					const unsigned char g = file.get();
+					const unsigned char r = file.get();
+					// Create a new color object out of the next 3 bytes
+					put_pixel(x, y, { Color(r,g,b) });
+				}
+				// Move forward padding bytes relative to current position
+				file.seekg(padding, std::ios::cur);
+			}
 		}
 	}
-	else
+	else if(bm_info_header.biBitCount == 32)
 	{
-		// top-down
-		for (int y = 0; y < height_; y++)
+		// Each row is padded to a multiple of 4 bytes
+		// In a 32bpp bitmap, each pixel is represented by a DWORD
+		// The least significant 8 bits contain the blue value, followed by green and red.
+		const int padding = (4 - (width_ * 4) % 4) % 4;
+
+		// Check if height is negative/positive to detect if we are loading a top-down or bottom-up DIB
+		if (height_ > 0)
 		{
-			for (int x = 0; x < width_; x++)
+			// bottom-up
+			for (int y = height_ - 1; y > 0; y--)
 			{
-				// Precalculate RGB since bitmap color order is BGR
-				const unsigned char b = file.get();
-				const unsigned char g = file.get();
-				const unsigned char r = file.get();
-				// Create a new color object out of the next 3 bytes
-				put_pixel(x, y, { Color(r,g,b) });
+				for (int x = 0; x < width_; x++)
+				{
+					// Precalculate RGB since bitmap color order is BGR
+					const unsigned char b = file.get();
+					const unsigned char g = file.get();
+					const unsigned char r = file.get();
+					// Create a new color object out of the next 3 bytes
+					put_pixel(x, y, { Color(r,g,b) });
+					// In 32bpp, the high byte of each pixel is not used, so we need to seek past it
+					file.seekg(sizeof(char), std::ios::cur);
+				}
+				// Move forward padding bytes relative to current position
+				file.seekg(padding, std::ios::cur);
 			}
-			// Move forward padding bytes relative to current position
-			file.seekg(padding, std::ios::cur);
+		}
+		else
+		{
+			// top-down
+			for (int y = 0; y < height_; y++)
+			{
+				for (int x = 0; x < width_; x++)
+				{
+					// Precalculate RGB since bitmap color order is BGR
+					const unsigned char b = file.get();
+					const unsigned char g = file.get();
+					const unsigned char r = file.get();
+					// Create a new color object out of the next 3 bytes
+					put_pixel(x, y, { Color(r,g,b) });
+				}
+				// Move forward padding bytes relative to current position
+				file.seekg(padding, std::ios::cur);
+			}
 		}
 	}
 
