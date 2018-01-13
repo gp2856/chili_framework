@@ -57,6 +57,9 @@
     <ClInclude Include="COMInitializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Surface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXErr.cpp">
@@ -86,6 +89,9 @@
     <ClCompile Include="COMInitializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="FramebufferPS.hlsl">
@@ -102,6 +108,12 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Chili.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dib.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="dib32.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
