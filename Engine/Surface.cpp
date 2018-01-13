@@ -2,6 +2,7 @@
 #include "Surface.h"
 #include <fstream>
 #include <cassert>
+#include <cmath>
 
 surface::surface(const std::string & filename)
 {
@@ -28,16 +29,42 @@ surface::surface(const std::string & filename)
 	// Each row is padded to a multiple of 4 bytes
 	const int padding = (4 - (width_ * 3) % 4) % 4;
 
-	// Loop through the pixel data
-	for(int y = 0; y < height_; y++)
+	// Check the sign bit of height to detect if we are loading a top-down or bottom-up DIB
+	if(height_ > 0)
 	{
-		for(int x = 0; x < width_; x++)
+		// bottom-up
+		for (int y = height_ - 1; y > 0; y--)
 		{
-			// Create a new color object out of the next 3 bytes
-			put_pixel(x, y, { Color(file.get(), file.get(), file.get()) });
+			for (int x = 0; x < width_; x++)
+			{
+				// Precalculate RGB since bitmap color order is BGR
+				const unsigned char b = file.get();
+				const unsigned char g = file.get();
+				const unsigned char r = file.get();
+				// Create a new color object out of the next 3 bytes
+				put_pixel(x, y, { Color(r,g,b) });
+			}
+			// Move forward padding bytes relative to current position
+			file.seekg(padding, std::ios::cur);
 		}
-		// Move forward padding bytes relative to current position
-		file.seekg(padding, std::ios::cur);
+	}
+	else
+	{
+		// top-down
+		for (int y = 0; y < height_; y++)
+		{
+			for (int x = 0; x < width_; x++)
+			{
+				// Precalculate RGB since bitmap color order is BGR
+				const unsigned char b = file.get();
+				const unsigned char g = file.get();
+				const unsigned char r = file.get();
+				// Create a new color object out of the next 3 bytes
+				put_pixel(x, y, { Color(r,g,b) });
+			}
+			// Move forward padding bytes relative to current position
+			file.seekg(padding, std::ios::cur);
+		}
 	}
 
 }
