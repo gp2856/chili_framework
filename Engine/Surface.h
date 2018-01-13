@@ -5,6 +5,7 @@
 class surface
 {
 public:
+	surface(const std::string& filename);
 	surface(const int width, const int height);
 	surface(const surface& source);
 	surface& operator=(const surface& source);

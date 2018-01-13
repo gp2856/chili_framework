@@ -1,5 +1,46 @@
+#include "ChiliWin.h"
 #include "Surface.h"
+#include <fstream>
 #include <cassert>
+
+surface::surface(const std::string & filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+
+	// Read header info into windows structs
+	BITMAPFILEHEADER bm_file_header;
+	BITMAPINFOHEADER bm_info_header;
+	file.read(reinterpret_cast<char*>(&bm_file_header), sizeof(bm_file_header));
+	file.read(reinterpret_cast<char*>(&bm_info_header), sizeof(bm_info_header));
+
+	// Assure we are only working with simple 8bpp RGB bitmap files
+	assert(bm_info_header.biBitCount == 24);
+	assert(bm_info_header.biCompression == BI_RGB);
+
+	width_ = bm_info_header.biWidth;
+	height_ = bm_info_header.biHeight;
+
+	pixels_ = new Color[width_*height_];
+
+	// Seek to raw data
+	file.seekg(bm_file_header.bfOffBits);
+
+	// Each row is padded to a multiple of 4 bytes
+	const int padding = (4 - (width_ * 3) % 4) % 4;
+
+	// Loop through the pixel data
+	for(int y = 0; y < height_; y++)
+	{
+		for(int x = 0; x < width_; x++)
+		{
+			// Create a new color object out of the next 3 bytes
+			put_pixel(x, y, { Color(file.get(), file.get(), file.get()) });
+		}
+		// Move forward padding bytes relative to current position
+		file.seekg(padding, std::ios::cur);
+	}
+
+}
 
 surface::surface(const int width, const int height)
 	:
@@ -23,6 +64,7 @@ surface(source.get_width(), source.get_height())
 surface & surface::operator=(const surface & source)
 
 {
+	assert(source.get_pixels() != pixels_);
 	width_ = source.get_width();
 	height_ = source.get_height();
 
@@ -57,8 +99,8 @@ int surface::get_height() const
 
 Color surface::get_pixel(const int x, const int y) const
 {
-	assert(0 <= x <= width_);
-	assert(0 <= y <= height_);
+	assert(0 <= x && x <= width_);
+	assert(0 <= y && y <= height_);
 	return pixels_[x + y * width_];
 }
 
@@ -69,7 +111,7 @@ Color * surface::get_pixels() const
 
 void surface::put_pixel(const int x, const int y, const Color& c)
 {
-	assert(0 <= x <= width_);
-	assert(0 <= y <= height_);
+	assert(0 <= x && x <= width_);
+	assert(0 <= y && y <= height_);
 	pixels_[x + y * width_] = c;
 }
