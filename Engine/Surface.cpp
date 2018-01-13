@@ -1,4 +1,5 @@
 #include "Surface.h"
+#include <cassert>
 
 surface::surface(const int width, const int height)
 	:
@@ -56,6 +57,8 @@ int surface::get_height() const
 
 Color surface::get_pixel(const int x, const int y) const
 {
+	assert(0 <= x <= width_);
+	assert(0 <= y <= height_);
 	return pixels_[x + y * width_];
 }
 
@@ -64,7 +67,9 @@ Color * surface::get_pixels() const
 	return pixels_;
 }
 
-void surface::put_pixel(const int x, const int y, const Color c)
+void surface::put_pixel(const int x, const int y, const Color& c)
 {
+	assert(0 <= x <= width_);
+	assert(0 <= y <= height_);
 	pixels_[x + y * width_] = c;
 }
