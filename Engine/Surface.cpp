@@ -150,3 +150,8 @@ void surface::put_pixel(const int x, const int y, const Color& c)
 	assert(0 <= y && y <= height_);
 	pixels_[x + y * width_] = c;
 }
+
+RectI surface::get_rect() const
+{
+	return { 0,width_,0,height_ };
+}
