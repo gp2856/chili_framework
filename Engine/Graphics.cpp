@@ -316,17 +316,100 @@ void Graphics::PutPixel( int x,int y,Color c )
 	pSysBuffer[Graphics::ScreenWidth * y + x] = c;
 }
 
-void Graphics::draw_sprite(const int x, const int y, const surface& s)
+void Graphics::draw_sprite_no_chroma(int x, int y, const surface& s)
 {
-	const int width = s.get_width();
-	const int height = s.get_height();
-	for (int sy = 0; sy < height; sy++)
+	draw_sprite_no_chroma(x, y, s.get_rect(), s);
+}
+
+void Graphics::draw_sprite_no_chroma(int x, int y, const RectI& source, const surface& s)
+{
+	draw_sprite_no_chroma(x, y, source, get_screen_rect(), s);
+}
+void Graphics::draw_sprite_no_chroma(int x, int y, RectI source, const RectI& clip, const surface & s)
+{
+	assert(source.left >= 0);
+	assert(source.right <= s.get_width());
+	assert(source.top >= 0);
+	assert(source.bottom <= s.get_height());
+
+	if (x < clip.left)
 	{
-		for (int sx = 0; sx < width; sx++)
+		source.left += clip.left - x;
+		x = clip.left;
+	}
+	if (y < clip.top)
+	{
+		source.top += clip.top - y;
+		y = clip.top;
+	}
+	if (x + source.GetWidth() > clip.right)
+	{
+		source.right -= x + source.GetWidth() - clip.right;
+	}
+	if (y + source.GetHeight() > clip.bottom)
+	{
+		source.bottom -= y + source.GetHeight() - clip.bottom;
+	}
+	for (int sy = source.top; sy < source.bottom; sy++)
+	{
+		for (int sx = source.left; sx < source.right; sx++)
 		{
-			PutPixel(x + sx, y + sy, s.get_pixel(sx, sy));
+			PutPixel(x + sx - source.left, y + sy - source.top, s.get_pixel(sx, sy));
 		}
 	}
+}
+
+void Graphics::draw_sprite(int x, int y, const surface& s, const Color& chroma)
+{
+	draw_sprite(x, y, s.get_rect(), s, chroma);
+}
+
+void Graphics::draw_sprite(int x, int y, const RectI& source, const surface& s, const Color& chroma)
+{
+	draw_sprite(x, y, source, get_screen_rect(), s, chroma);
+}
+
+void Graphics::draw_sprite(int x, int y, RectI source, const RectI & clip, const surface & s, const Color & chroma)
+{
+	assert(source.left >= 0);
+	assert(source.right <= s.get_width());
+	assert(source.top >= 0);
+	assert(source.bottom <= s.get_height());
+
+	if (x < clip.left)
+	{
+		source.left += clip.left - x;
+		x = clip.left;
+	}
+	if (y < clip.top)
+	{
+		source.top += clip.top - y;
+		y = clip.top;
+	}
+	if (x + source.GetWidth() > clip.right)
+	{
+		source.right -= x + source.GetWidth() - clip.right;
+	}
+	if (y + source.GetHeight() > clip.bottom)
+	{
+		source.bottom -= y + source.GetHeight() - clip.bottom;
+	}
+	for (int sy = source.top; sy < source.bottom; sy++)
+	{
+		for (int sx = source.left; sx < source.right; sx++)
+		{
+			const Color& src_pixel = s.get_pixel(sx, sy);
+			if (src_pixel != chroma)
+			{
+				PutPixel(x + sx - source.left, y + sy - source.top, src_pixel);
+			}
+		}
+	}
+}
+
+RectI Graphics::get_screen_rect() const
+{
+	return RectI(0,ScreenWidth,0,ScreenHeight);
 }
 
 
